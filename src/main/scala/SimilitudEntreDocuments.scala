@@ -41,24 +41,16 @@ object SimilitudEntreDocuments {
       mutable_vsm2 += tuple
     })
 
-    mutable_vsm1.take(50).foreach(x => {
-      println(f"${x._1}: ${x._2}%.20f")
-    })
-    println("")
-    mutable_vsm2.take(50).foreach(x => {
-      println(f"${x._1}: ${x._2}%.20f")
-    })
+    val component1 = Math.sqrt(mutable_vsm1.map(x => x._2*x._2).sum)
+    val component2 = Math.sqrt(mutable_vsm2.map(x => x._2*x._2).sum)
 
-    /*var sim = 0
+    val sum = mutable_vsm1.zip(mutable_vsm2).map { case (ngram1, ngram2)  =>
+      ngram1._2*ngram2._2
+    }.sum
 
-    val component1 = Math.sqrt(vsm1.map(x => Math.pow((x._2),2)).sum)
-    val component2 = Math.sqrt(vsm2.map(x => Math.pow((x._2),2)).sum)
-
-    vsm1.zip(vsm2).foreach { case (ngram1, ngram2)  =>
-
-    }*/
-    val x: Double = 1
-    x
+    println(sum)
+    println(component1*component2)
+    sum/(component1*component2)
   }
 
   /**
