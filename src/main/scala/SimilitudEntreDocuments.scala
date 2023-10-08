@@ -1,3 +1,4 @@
+import scala.collection.SortedSet
 import scala.io.Source
 
 object SimilitudEntreDocuments {
@@ -6,10 +7,113 @@ object SimilitudEntreDocuments {
     // Your application code goes here
     //printWordOccurrence(freq(normalitza(readFileAsString("data/pg11.txt"))))
 
-    val stringBook = normalitza(readFileAsString("data/pg11.txt"))
+    val stringBook1 = normalitza(readFileAsString("data/pg11.txt"))
+    val stringBook2 = normalitza(readFileAsString("data/pg12.txt"))
     val listStopWords = readStopWordsFromFile("data/english-stop.txt")
 
-    displayNGrams(stringBook, 3)
+    //displayNGrams(stringBook, 3)
+    print("La similitud és de " + cosinesim(stringBook1, stringBook2, listStopWords))
+  }
+
+  def cosinesim(str1: String, str2: String, stopWords: List[String]): Double = {
+    val vsm1 = getVectorSpaceModel(str1, 1, stopWords)
+    val vsm2 = getVectorSpaceModel(str2, 1, stopWords)
+
+    compareVectorSpaceModel(vsm1, vsm2)
+  }
+
+  def compareVectorSpaceModel(vsm1: SortedSet[(String, Double)], vsm2: SortedSet[(String, Double)]): Double = {
+    val ngramIn1 = vsm1.map { case (ngram, _) => ngram }
+    val notIn1 = vsm2.filter(x => !(ngramIn1.contains(x._1)))
+
+    val ngramIn2 = vsm2.map { case (ngram, _) => ngram }
+    val notIn2 = vsm1.filter(x => !(ngramIn2.contains(x._1)))
+
+    var mutable_vsm1: SortedSet[(String, Double)] = vsm1
+    var mutable_vsm2: SortedSet[(String, Double)] = vsm2
+
+    notIn1.foreach(ngram => {
+      val tuple: (String, Double) = (ngram._1, 0)
+      mutable_vsm1 += tuple
+    })
+    notIn2.foreach(ngram => {
+      val tuple: (String, Double) = (ngram._1, 0)
+      mutable_vsm2 += tuple
+    })
+
+    mutable_vsm1.take(50).foreach(x => {
+      println(f"${x._1}: ${x._2}%.20f")
+    })
+    println("")
+    mutable_vsm2.take(50).foreach(x => {
+      println(f"${x._1}: ${x._2}%.20f")
+    })
+
+    /*var sim = 0
+
+    val component1 = Math.sqrt(vsm1.map(x => Math.pow((x._2),2)).sum)
+    val component2 = Math.sqrt(vsm2.map(x => Math.pow((x._2),2)).sum)
+
+    vsm1.zip(vsm2).foreach { case (ngram1, ngram2)  =>
+
+    }*/
+    val x: Double = 1
+    x
+  }
+
+  /**
+   * Returns the string passed with only one space separating each words and with all stopwords removed.
+   * @param str
+   * @param stopWords
+   * @return
+   */
+  def getStringWithoutStopWords(str: String, stopWords: List[String]): String = {
+
+    var words = str.split("\\s+").toList
+    words = words.filter(x => !stopWords.contains(x))
+    words.mkString(" ")
+  }
+
+  /**
+   * Returns the vectorSpaceModel for the string str with n-word strings.
+   * @param str
+   * @param n
+   * @return
+   */
+  def getVectorSpaceModel(str: String, n: Int, stopWords: List[String]): SortedSet[(String, Double)] = {
+
+    val nonStopString = getStringWithoutStopWords(str, stopWords)
+    val wordsCounts = freqNGrams(nonStopString, n)
+    val maxFreq = wordsCounts.map(_._2).max
+
+    var setWeights: SortedSet[(String, Double)] = SortedSet()
+    wordsCounts.foreach(x => {
+      val tuple: (String, Double) = (x._1 ,calculaFrequenciaNormalitzada(x._2,maxFreq))
+      setWeights += tuple
+    })
+
+    setWeights
+  }
+
+  /**
+   * Calcula la freqüència normalitzada d'una paraula en un text que conté una frequencia maxima freqMaxWord
+   * @param freqWord
+   * @param freqMaxWord
+   * @return
+   */
+  def calculaFrequenciaNormalitzada(freqWord: Int, freqMaxWord: Int): Double = {
+    freqWord.toDouble/freqMaxWord.toDouble
+  }
+
+  def freqNGrams(str: String, n: Int): List[(String, Int)] = {
+    val words = str.split("\\s+").toList
+
+    val listNGrams = words.sliding(n).toList
+    val ngrams = listNGrams.map(ngram => ngram.mkString(" "))
+
+    val listAppearances = ngrams.groupBy(identity).view.mapValues(_.size).toList.sortBy(_._2)(Ordering.Int.reverse)
+
+    listAppearances
   }
 
   /**
@@ -18,15 +122,11 @@ object SimilitudEntreDocuments {
    * @param n number of words that make the n-grams
    */
   def displayNGrams(str: String, n: Int): Unit = {
-    val words = str.split("\\s+").toList
 
-    val listNGrams = words.sliding(n).toList
-    val ngrams = listNGrams.map(ngram => ngram.mkString(" "))
-
-    val listAppearances = ngrams.groupBy(identity).view.mapValues(_.size).toList.sortBy(_._2)(Ordering.Int.reverse)
+    val ngrams: List[(String, Int)] = freqNGrams(str, n)
 
     println("NGrams més freqüents:")
-    for (ngram <- listAppearances.take(10)) {
+    for (ngram <- ngrams.take(10)) {
       // Imprimim primer el 2: nombre de paraules que han aparegut n vegades, i després 1: nombre de vegades que han aparegut.
       println(f"${ngram._1}%-25s ${ngram._2}%3s")
     }
