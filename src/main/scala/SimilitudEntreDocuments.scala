@@ -11,7 +11,14 @@ object SimilitudEntreDocuments {
     val stringBook2 = normalitza(readFileAsString("data/pg12.txt"))
     val listStopWords = readStopWordsFromFile("data/english-stop.txt")
 
-    //displayNGrams(stringBook, 3)
+    // FREQUENCIA DE PARAULES
+    //printWordOccurrence(freq(stringBook1))
+    // FREQUENCIA DE PARAULES SENSE STOP-WORDS
+    //printWordOccurrence(nonStopFreq(stringBook1, listStopWords))
+    // DISTRIBUCIÓ DE PARAULES
+    //paraulaFreqFreq(stringBook1)
+    // N-GRAMS
+    //displayNGrams(stringBook1, 1)
     print("La similitud és de " + cosinesim(stringBook1, stringBook2, listStopWords))
   }
 
@@ -24,20 +31,20 @@ object SimilitudEntreDocuments {
 
   def compareVectorSpaceModel(vsm1: SortedSet[(String, Double)], vsm2: SortedSet[(String, Double)]): Double = {
     val ngramIn1 = vsm1.map { case (ngram, _) => ngram }
-    val notIn1 = vsm2.filter(x => !(ngramIn1.contains(x._1)))
+    val notIn1 = vsm2.filter(x => !(ngramIn1.contains(x._1))).map(_._1)
 
     val ngramIn2 = vsm2.map { case (ngram, _) => ngram }
-    val notIn2 = vsm1.filter(x => !(ngramIn2.contains(x._1)))
+    val notIn2 = vsm1.filter(x => !(ngramIn2.contains(x._1))).map(_._1)
 
     var mutable_vsm1: SortedSet[(String, Double)] = vsm1
     var mutable_vsm2: SortedSet[(String, Double)] = vsm2
 
     notIn1.foreach(ngram => {
-      val tuple: (String, Double) = (ngram._1, 0)
+      val tuple: (String, Double) = (ngram, 0)
       mutable_vsm1 += tuple
     })
     notIn2.foreach(ngram => {
-      val tuple: (String, Double) = (ngram._1, 0)
+      val tuple: (String, Double) = (ngram, 0)
       mutable_vsm2 += tuple
     })
 
@@ -79,7 +86,9 @@ object SimilitudEntreDocuments {
     val maxFreq = wordsCounts.map(_._2).max
 
     var setWeights: SortedSet[(String, Double)] = SortedSet()
+    println("mf" + maxFreq)
     wordsCounts.foreach(x => {
+      println(x._1 + " - " + calculaFrequenciaNormalitzada(x._2,maxFreq));
       val tuple: (String, Double) = (x._1 ,calculaFrequenciaNormalitzada(x._2,maxFreq))
       setWeights += tuple
     })
@@ -126,9 +135,12 @@ object SimilitudEntreDocuments {
 
   /**
    * Displays the appearances that have the most and the least number of words.
-   * @param listCounts
+   * @param str
    */
-  def paraulaFreqFreq(listCounts: List[(String, Int)]): Unit = {
+  def paraulaFreqFreq(str: String): Unit = {
+
+    val listCounts: List[(String, Int)] = freq(str);
+
     /**
      * First we group by the second parameter all elements of the list, meaning we're going to get a Map of number of appearences and List of tuples with that number of appearances.
      * Then we apply mapValues to apply the function size to each one of the values (as it is a map those are the tuples of words appearing that many times).
@@ -145,7 +157,7 @@ object SimilitudEntreDocuments {
       println(word._2 + " paraules apareixen " + word._1 + " vegades")
     }
 
-    println("%nLes 5 frequencies menys frequents:")
+    println("\nLes 5 frequencies menys frequents:")
     for (word <- last5) {
       // Imprimim primer el 2: nombre de paraules que han aparegut n vegades, i després 1: nombre de vegades que han aparegut.
       println(word._2 + " paraules apareixen " + word._1 + " vegades")
@@ -183,7 +195,7 @@ object SimilitudEntreDocuments {
     println("---------------------------------------")
 
     // Print the sorted word counts with frequency percentages
-    for ((word, count) <- list) {
+    for ((word, count) <- list.take(10)) {
       val frequency = (count.toDouble / totalWords * 100).formatted("%.2f")
       // Negatiu alinea esquerra, positiu dreta
       println(f"${word}%-15s ${count}%5d ${frequency}%6s")
