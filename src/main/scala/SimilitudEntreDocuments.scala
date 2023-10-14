@@ -29,7 +29,8 @@ object SimilitudEntreDocuments {
     compareVectorSpaceModel(vsm1, vsm2)
   }
 
-  def compareVectorSpaceModel(vsm1: SortedSet[(String, Double)], vsm2: SortedSet[(String, Double)]): Double = {
+  //OLD METHOD (DELETE LATER)
+  /*def compareVectorSpaceModel(vsm1: SortedSet[(String, Double)], vsm2: SortedSet[(String, Double)]): Double = {
     val ngramIn1 = vsm1.map { case (ngram, _) => ngram }
     val notIn1 = vsm2.filter(x => !(ngramIn1.contains(x._1))).map(_._1)
 
@@ -58,7 +59,41 @@ object SimilitudEntreDocuments {
     println(sum)
     println(component1*component2)
     sum/(component1*component2)
+  }*/
+
+  def compareVectorSpaceModel(vsm1: Vector[(String, Double)], vsm2: Vector[(String, Double)]): Double = {
+    val ngramIn1 = vsm1.map { case (ngram, _) => ngram }.toSet
+    val notIn1 = vsm2.filter(x => !(ngramIn1.contains(x._1)))
+
+    val ngramIn2 = vsm2.map { case (ngram, _) => ngram }.toSet
+    val notIn2 = vsm1.filter(x => !(ngramIn2.contains(x._1)))
+
+    var mutable_vsm1: Vector[(String, Double)] = vsm1
+    var mutable_vsm2: Vector[(String, Double)] = vsm2
+
+    notIn1.foreach(ngram => {
+      val tuple: (String, Double) = (ngram._1, 0)
+      mutable_vsm1 :+= tuple
+    })
+    notIn2.foreach(ngram => {
+      val tuple: (String, Double) = (ngram._1, 0)
+      mutable_vsm2 :+= tuple
+    })
+
+    // Sort both vectors by n-gram to ensure they are in the same order
+    mutable_vsm1 = mutable_vsm1.sortBy(_._1)
+    mutable_vsm2 = mutable_vsm2.sortBy(_._1)
+
+    val component1 = Math.sqrt(mutable_vsm1.map(x => x._2 * x._2).sum)
+    val component2 = Math.sqrt(mutable_vsm2.map(x => x._2 * x._2).sum)
+
+    val sum = mutable_vsm1.zip(mutable_vsm2).map { case (ngram1, ngram2) =>
+      ngram1._2 * ngram2._2
+    }.sum
+
+    sum / (component1 * component2)
   }
+
 
   /**
    * Returns the string passed with only one space separating each words and with all stopwords removed.
@@ -79,6 +114,8 @@ object SimilitudEntreDocuments {
    * @param n
    * @return
    */
+    //OLD METHOD (DELETE LATER)
+    /*
   def getVectorSpaceModel(str: String, n: Int, stopWords: List[String]): SortedSet[(String, Double)] = {
 
     val nonStopString = getStringWithoutStopWords(str, stopWords)
@@ -94,7 +131,24 @@ object SimilitudEntreDocuments {
     })
 
     setWeights
-  }
+  }*/
+
+    def getVectorSpaceModel(str: String, n: Int, stopWords: List[String]): Vector[(String, Double)] = {
+      val nonStopString = getStringWithoutStopWords(str, stopWords)
+      val wordsCounts = freqNGrams(nonStopString, n)
+      val maxFreq = wordsCounts.map(_._2).max
+
+      var vectorWeights: Vector[(String, Double)] = Vector()
+      println("mf" + maxFreq)
+      wordsCounts.foreach(x => {
+        println(x._1 + " - " + calculaFrequenciaNormalitzada(x._2, maxFreq))
+        val tuple: (String, Double) = (x._1, calculaFrequenciaNormalitzada(x._2, maxFreq))
+        vectorWeights :+= tuple
+      })
+
+      vectorWeights
+    }
+
 
   /**
    * Calcula la freqüència normalitzada d'una paraula en un text que conté una frequencia maxima freqMaxWord
