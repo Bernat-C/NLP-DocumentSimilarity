@@ -16,10 +16,10 @@ object SimilitudEntreDocuments {
     // FREQUENCIA DE PARAULES SENSE STOP-WORDS
     //printWordOccurrence(nonStopFreq(stringBook1, listStopWords))
     // DISTRIBUCIÓ DE PARAULES
-    //paraulaFreqFreq(stringBook1)
+    paraulaFreqFreq(stringBook1)
     // N-GRAMS
     //displayNGrams(stringBook1, 1)
-    print("La similitud és de " + cosinesim(stringBook1, stringBook2, listStopWords))
+    //print("La similitud és de " + cosinesim(stringBook1, stringBook2, listStopWords))
   }
 
   def cosinesim(str1: String, str2: String, stopWords: List[String]): Double = {
@@ -103,7 +103,7 @@ object SimilitudEntreDocuments {
    */
   def getStringWithoutStopWords(str: String, stopWords: List[String]): String = {
 
-    var words = str.split("\\s+").toList
+    var words = str.split("\\s+").filter(_.nonEmpty).toList
     words = words.filter(x => !stopWords.contains(x))
     words.mkString(" ")
   }
@@ -139,9 +139,7 @@ object SimilitudEntreDocuments {
       val maxFreq = wordsCounts.map(_._2).max
 
       var vectorWeights: Vector[(String, Double)] = Vector()
-      println("mf" + maxFreq)
       wordsCounts.foreach(x => {
-        println(x._1 + " - " + calculaFrequenciaNormalitzada(x._2, maxFreq))
         val tuple: (String, Double) = (x._1, calculaFrequenciaNormalitzada(x._2, maxFreq))
         vectorWeights :+= tuple
       })
@@ -161,7 +159,7 @@ object SimilitudEntreDocuments {
   }
 
   def freqNGrams(str: String, n: Int): List[(String, Int)] = {
-    val words = str.split("\\s+").toList
+    val words = str.split("\\s+").filter(_.nonEmpty).toList
 
     val listNGrams = words.sliding(n).toList
     val ngrams = listNGrams.map(ngram => ngram.mkString(" "))
@@ -263,9 +261,9 @@ object SimilitudEntreDocuments {
    * @return
    */
   def nonStopFreq(str: String, stopWords: List[String]): List[(String, Int)] = {
-    var words = str.split("\\s+").toList
+    var words = str.split("\\s+").filter(_.nonEmpty).toList
     words = words.filter(x => !stopWords.contains(x))
-    words.groupBy(identity).view.mapValues(_.size).toList.sortBy(_._2)(Ordering.Int.reverse)
+    freqList(words);
   }
 
   /**
@@ -273,9 +271,14 @@ object SimilitudEntreDocuments {
    * @param str
    * @return
    */
-  def freq(str: String): List[(String, Int)] = {
-    val words = str.split("\\s+").toList
-    words.groupBy(identity).view.mapValues(_.size).toList.sortBy(_._2)(Ordering.Int.reverse)
+    def freq(str: String): List[(String, Int)] = {
+    val words = str.split("\\s+").filter(_.nonEmpty).toList
+    freqList(words);
+  }
+
+
+  def freqList(ls: List[String]): List[(String, Int)] = {
+    ls.groupBy(identity).view.mapValues(_.size).toList.sortBy(_._2)(Ordering.Int.reverse)
   }
 
   /**
